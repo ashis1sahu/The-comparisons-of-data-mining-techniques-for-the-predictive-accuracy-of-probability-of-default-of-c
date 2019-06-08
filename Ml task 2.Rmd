@@ -1,0 +1,219 @@
+---
+title: "M task 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+df<-read.csv("german_credit_data.csv")
+library(arm)
+```
+
+
+```{r}
+df1<-na.omit(df)
+#df1<-as.numeric(df1)
+df1<-lapply(df1,as.numeric)
+df1<-as.data.frame(df1)
+#df1$Risk<- as.factor(df1$Risk)
+
+#dummyRisk
+df1$dummyRisk<-as.numeric(df1$Risk==2)
+class(df1$dummyRisk)
+names(df1$dummyRisk)
+df1$Risk<-NULL
+
+temp<- df1
+```
+
+
+
+```{r}
+lr<-glm(df1$dummyRisk~.,family = binomial(link = "logit"), data = df1)
+summary(lr)
+lr
+# Use the model to predict the evaluation.
+df1$prediction <- (predict(lr, newdata=df1))
+#df1$prediction<-(df1$prediction>0)
+s<-sum(range(df1$prediction))
+df1$prediction<-as.numeric(df1$prediction>s)
+
+#RegressionR2
+library(rsq)
+rsq(lr)
+
+#Intercept
+coef(lr)["(Intercept)"]
+
+#Regression Coeffient
+coef(lr)["X"]
+
+
+# Calculate the overall accuracy.
+df1$Correct <- df1$prediction == df1$dummyRisk
+print(paste("% of predicted classifications correct", mean(df1$Correct)))
+
+```
+
+
+```{r}
+df2<- temp
+library(caret)
+library(ISLR)
+library(DMwR)
+
+df2$dummyRisk<-as.numeric(df2$dummyRisk)
+Knn<-kNN(df2$dummyRisk~.,train = df2,test = temp, cl= df2$dummyRisk, k=2)
+
+class(df2$dummyRisk)
+# Use the model to predict the evaluation.
+predict(Knn, newdata=df2)
+#df1$prediction<-(df1$prediction>0)
+s<-sum(range(df1$prediction))
+df1$prediction<-as.numeric(df1$prediction>s)
+
+#RegressionR2
+library(rsq)
+rsq(lr)
+
+#Intercept
+coef(lr)["(Intercept)"]
+
+#Regression Coeffient
+coef(lr)["X"]
+
+confusionMatrix(as.factor(df1$dummyRisk), as.factor(df1$prediction))
+
+
+
+```
+
+
+```{r}
+df3<-temp
+library(MASS)
+ld <- lda(df3$dummyRisk ~ ., data = df3)
+prediction<- predict(ld, newdata = df3)
+df3<-cbind(df3, prediction)
+class(df3$dummyRisk)
+
+df3$dummyRisk<-as.factor(df3$dummyRisk)
+class(df3$class)
+
+df3$class<- as.numeric(df3$class) 
+
+df3$class<- as.numeric(df3$class > 1) 
+
+df3$class<- as.factor(df3$class) 
+
+confusionMatrix(df3$dummyRisk, df3$class)
+
+levels(df3$class)
+levels(df3$dummyRisk)
+
+#RegressionR2
+library(rsq)
+rsq(ld)
+
+#Intercept
+coef(ld)["(Intercept)"]
+
+#Regression Coeffient
+coef(ld)["X"]
+
+
+confusionMatrix(as.factor(df3$dummyRisk), as.factor(df3$predictiom))
+
+```
+
+```{r}
+library(e1071)
+library(klaR)
+df4<-temp
+nb<-naiveBayes(df4$dummyRisk ~ ., data = df4)
+#prediction <- 
+predict(nb, newdata=df4[,-1])
+df4<-cbind(df4,prediction)
+
+#RegressionR2
+library(rsq)
+rsq(nb)
+
+#Intercept
+coef(nb)["(Intercept)"]
+
+#Regression Coeffient
+coef(nb)["X"]
+
+confusionMatrix(as.factor(df4$dummyRisk), as.factor(df4$prediction))
+
+```
+
+```{r}
+library(rpart)
+df5<-temp
+df5$dummyRisk<-as.numeric(df5$dummyRisk)
+ct<-rpart(df5$dummyRisk ~ ., data = df5, method = "class")
+prediction<-predict(ct, newdata=df5)
+prediction<-as.data.frame(prediction)
+prediction$pred<-prediction$`0`<prediction$`1`
+df5<-cbind(df5,prediction$pred)
+df5$`prediction$pred`<-as.numeric(df5$`prediction$pred`)
+
+#RegressionR2
+library(rsq)
+rsq(ct)
+
+#Intercept
+coef(ct)["(Intercept)"]
+
+#Regression Coeffient
+coef(ct)["X"]
+
+
+
+confusionMatrix(as.factor(df5$dummyRisk), as.factor(df5$pred))
+levels(df5$dummyRisk)
+class(df5$`prediction$pred`)
+
+
+```
+
+```{r}
+library(neuralnet)
+df6<-temp[,-1]
+df6$dummyRisk<-as.factor(df6$dummyRisk)
+nn <- neuralnet(df6$dummyRisk~. , data = df6)
+
+predict(nn, newdata=df6)
+prediction<-as.data.frame(prediction)
+prediction$pred<-prediction$`0`<prediction$`1`
+df5<-cbind(df5,prediction$pred)
+df5$`prediction$pred`<-as.numeric(df5$`prediction$pred`)
+
+confusionMatrix(as.factor(df6$dummyRisk), as.factor(df6$pred))
+levels(df5$dummyRisk)
+class(df5$`prediction$pred`)
+
+#RegressionR2
+library(rsq)
+rsq(nn)
+
+#Intercept
+coef(nn)["(Intercept)"]
+
+#Regression Coeffient
+coef(nn)["X"]
+
+
+
+```
+
+```{r}
+names(df)
+```
+
+
